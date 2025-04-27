@@ -5,12 +5,12 @@ Basit, tek‐dosyalık bir Python + Tkinter projesi. Araç ekleme, müşteri 
 ---
 ## Kurulum
 ```bash
-# 1) Repoyu klonla
-git clone 
-cd
+# 1) Repoyu klonlayın
+cd Desktop
+git clone https://github.com/kebabified2/arac-kiralama-proje1/edit/main/README.md
 
 # 2) Çalıştır
-python app.py            # veya python arac_kiralama_gui.py
+python arac_kiralama_gui.py
 ```
 > Tkinter, Python’ın standart kütüphanesindedir; ek bağımlılık yoktur.
 
