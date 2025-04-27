@@ -35,7 +35,9 @@ Uygulama açıldığında iki liste ve sağda butonlar görürsünüz.
 | **Çıkış**       | Programı kapatır |
 
 > Listelerde mavi satır seçili demektir. **Kirala/Teslim Al** için iki seçim gerekir; **Sorgu** sadece araç seçimine bakar.
-> Pickle aracılığıyla kaydetme özelliği mevcuttur.
+
+# Ekstra
+* Pickle aracılığıyla kaydetme özelliği mevcuttur.
 
 ---
 ## Lisans
