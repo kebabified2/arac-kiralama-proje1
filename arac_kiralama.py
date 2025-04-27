@@ -1,4 +1,8 @@
 from datetime import datetime
+import os
+import pickle
+
+DATA_FILE = "kiralama.dat"  # kayıt dosyası
 
 
 class Arac:
@@ -10,7 +14,6 @@ class Arac:
         self.kiralama_durumu = False  # False = müsait, True = kirada
 
     def arac_durumu_guncelle(self, durum: bool):
-        """Araç durumunu günceller"""
         self.kiralama_durumu = durum
 
     def __repr__(self):
@@ -32,14 +35,33 @@ class Musteri:
 
 
 class Kiralama:
-    """Kiralama işlemlerini yöneten sınıf"""
+    """Kiralama işlemlerini yöneten sınıf
+    save/load ile diske yazılır – pickle basitliği yeterlidir.
+    """
 
     def __init__(self):
         self.araclar: dict[int, Arac] = {}
         self.musteriler: dict[int, Musteri] = {}
-        self.kiralamalar: list[dict] = []  # aktif & geçmiş kiralamalar
+        self.kiralamalar: list[dict] = []
 
-    # --- Kayıt yöntemleri ---
+    # ---------- Kalıcı depolama ----------
+    def save(self, path: str = DATA_FILE):
+        """Nesneyi pickle ile diske yazar"""
+        with open(path, "wb") as fh:
+            pickle.dump(self, fh)
+
+    @classmethod
+    def load(cls, path: str = DATA_FILE):
+        """Dosya varsa oku, yoksa boş sistem döndür"""
+        if os.path.exists(path):
+            with open(path, "rb") as fh:
+                obj = pickle.load(fh)
+                # sınıf adımız değişmediyse güvenli—yine de tip kontrolü yapalım
+                if isinstance(obj, cls):
+                    return obj
+        return cls()
+
+    # ---------- Kayıt yöntemleri ----------
     def arac_ekle(self, arac_id: int, model: str):
         if arac_id in self.araclar:
             raise ValueError("Bu araç ID zaten mevcut.")
@@ -50,7 +72,7 @@ class Kiralama:
             raise ValueError("Bu müşteri ID zaten mevcut.")
         self.musteriler[musteri_id] = Musteri(musteri_id, ad, soyad)
 
-    # --- İşlem yöntemleri ---
+    # ---------- İşlem yöntemleri ----------
     def kiralama_yap(self, musteri_id: int, arac_id: int):
         if musteri_id not in self.musteriler:
             raise KeyError("Müşteri bulunamadı.")
@@ -59,11 +81,9 @@ class Kiralama:
 
         musteri = self.musteriler[musteri_id]
         arac = self.araclar[arac_id]
-
         if arac.kiralama_durumu:
             raise RuntimeError("Araç zaten kirada.")
 
-        # işlemler
         arac.arac_durumu_guncelle(True)
         musteri.kiraladigi_araclar.append(arac_id)
         self.kiralamalar.append({
@@ -79,7 +99,6 @@ class Kiralama:
         if not arac or not musteri:
             raise KeyError("Müşteri veya araç bulunamadı.")
 
-        # aktif kiralamayı bul
         aktif = next((k for k in self.kiralamalar
                       if k["musteri_id"] == musteri_id and
                          k["arac_id"] == arac_id and
@@ -91,8 +110,7 @@ class Kiralama:
         musteri.kiraladigi_araclar.remove(arac_id)
         aktif["bitis"] = datetime.now()
 
-    def kiralama_bilgisi(self) -> list[dict]:
-        """Tüm kiralamaları okunabilir formatta listeler"""
+    def kiralama_bilgisi(self):
         return [{
             **k,
             "baslangic": k["baslangic"].strftime("%Y-%m-%d %H:%M:%S"),
@@ -100,14 +118,18 @@ class Kiralama:
         } for k in self.kiralamalar]
 
 
-# --- Örnek kullanım ---
+# ---------- Hızlı test ----------
 if __name__ == "__main__":
-    sistem = Kiralama()
-    sistem.arac_ekle(1, "Toyota Corolla")
-    sistem.musteri_ekle(100, "Ahmet", "Yılmaz")
+    # daha önceki durumu yükle
+    sistem = Kiralama.load()
 
-    sistem.kiralama_yap(100, 1)
-    print("Aktif kiralamalar:", sistem.kiralama_bilgisi())
+    # test eklemeler
+    if not sistem.araclar:
+        sistem.arac_ekle(1, "Toyota Corolla")
+        sistem.musteri_ekle(100, "Ahmet", "Yılmaz")
+        sistem.kiralama_yap(100, 1)
 
-    sistem.kiralama_iptal_et(100, 1)
-    print("Güncel kiralama durumu:", sistem.kiralama_bilgisi())
+    print("Kiralamalar:", sistem.kiralama_bilgisi())
+
+    # çıkışta kaydet
+    sistem.save()
