@@ -1,26 +1,54 @@
 import tkinter as tk
-from tkinter import simpledialog, messagebox
+from tkinter import ttk, simpledialog, messagebox
 from arac_kiralama import Kiralama
 
 
 class App(tk.Tk):
-    """Basit Tkinter arayüzü – kalıcı kayıt destekli."""
-
     def __init__(self):
         super().__init__()
         self.title("Araç Kiralama")
-        self.geometry("500x220")
-        self.resizable(False, False)
+        self.geometry("620x300")
+        self.minsize(620, 300)
 
-        # ---- Veri ----
-        self.sys = Kiralama.load()  # diskteki veriyi getir
+        style = ttk.Style(self)
+        style.theme_use("clam")
+        style.configure("TButton", padding=6)
+        style.configure("TLabel", font=("Segoe UI", 10))
+        style.configure("Header.TLabel", font=("Segoe UI", 11, "bold"))
 
-        # ---- UI ----
-        self.lbx_car = tk.Listbox(self, width=40, exportselection=False)
-        self.lbx_cust = tk.Listbox(self, width=25, exportselection=False)
-        self.lbx_car.grid(row=0, column=0, rowspan=6, padx=5, pady=5)
-        self.lbx_cust.grid(row=0, column=1, rowspan=6, padx=5, pady=5)
+        self.sys = Kiralama.load()
 
+        # --- Containers ----------------------------------------------------
+        frm_lists = ttk.Frame(self)
+        frm_lists.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+
+        frm_buttons = ttk.Frame(self)
+        frm_buttons.grid(row=0, column=1, padx=(0, 10), pady=10, sticky="ns")
+
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(0, weight=1)
+
+        # --- Car list ------------------------------------------------------
+        ttk.Label(frm_lists, text="Araçlar", style="Header.TLabel").grid(row=0, column=0, sticky="w")
+        self.lbx_car = tk.Listbox(frm_lists, height=12, exportselection=False)
+        scr_car = ttk.Scrollbar(frm_lists, orient="vertical", command=self.lbx_car.yview)
+        self.lbx_car.config(yscrollcommand=scr_car.set)
+        self.lbx_car.grid(row=1, column=0, sticky="nsew")
+        scr_car.grid(row=1, column=1, sticky="ns", padx=(2, 0))
+
+        # --- Customer list -------------------------------------------------
+        ttk.Label(frm_lists, text="Müşteriler", style="Header.TLabel").grid(row=0, column=2, sticky="w", padx=(20, 0))
+        self.lbx_cust = tk.Listbox(frm_lists, height=12, exportselection=False)
+        scr_cust = ttk.Scrollbar(frm_lists, orient="vertical", command=self.lbx_cust.yview)
+        self.lbx_cust.config(yscrollcommand=scr_cust.set)
+        self.lbx_cust.grid(row=1, column=2, sticky="nsew", padx=(20, 0))
+        scr_cust.grid(row=1, column=3, sticky="ns", padx=(2, 0))
+
+        frm_lists.grid_columnconfigure(0, weight=1)
+        frm_lists.grid_columnconfigure(2, weight=1)
+        frm_lists.grid_rowconfigure(1, weight=1)
+
+        # --- Buttons -------------------------------------------------------
         btn_cfg = (
             ("Araç Ekle", self.add_car),
             ("Müşteri Ekle", self.add_cust),
@@ -30,14 +58,14 @@ class App(tk.Tk):
             ("Çıkış", self.close),
         )
         for i, (txt, cmd) in enumerate(btn_cfg):
-            tk.Button(self, text=txt, command=cmd).grid(row=i, column=2, pady=3)
+            ttk.Button(frm_buttons, text=txt, command=cmd).grid(row=i, column=0, pady=4, sticky="ew")
 
-        # pencere X butonu → aynı kapatma
+        frm_buttons.grid_columnconfigure(0, weight=1)
+
         self.protocol("WM_DELETE_WINDOW", self.close)
-
         self.refresh()
 
-    # ------ Yardımcılar ------
+    # --- Helpers ----------------------------------------------------------
     def ask_int(self, title):
         val = simpledialog.askstring(title, f"{title} girin:", parent=self)
         return int(val) if val else None
@@ -58,11 +86,10 @@ class App(tk.Tk):
             self.lbx_cust.insert(tk.END, f"{m.musteri_id} - {m.ad} {m.soyad}")
 
     def _commit(self):
-        """Veri değiştiğinde kaydet & listeyi yenile"""
         self.sys.save()
         self.refresh()
 
-    # ------ İşlevler ------
+    # --- Actions ----------------------------------------------------------
     def add_car(self):
         i = self.ask_int("Araç ID")
         model = self.ask_str("Model")
@@ -124,7 +151,6 @@ class App(tk.Tk):
         messagebox.showinfo("Sorgu", f"Araç ID {a_id} → {m.ad} {m.soyad} (ID {m.musteri_id})")
 
     def close(self):
-        """Pencere kapanırken veriyi kaydet"""
         self.sys.save()
         self.destroy()
 
